@@ -1,0 +1,25 @@
+## Template recipe for Lua platform install
+---
+recipeFormatVersion: 2020-01-25
+componentName: docker
+componentVersion: 1.9.0
+componentDescription: The docker platform
+componentPublisher: Amazon
+
+#include("platforms/standard.yml")
+
+lifecycle:
+  install:
+    skipif: onpath docker
+    script:
+        posix:
+            script: |
+                if which apt-get;
+                    then apt-get install -y docker
+                elif which yum;
+                    then yum install epel-release && yum install docker
+                else echo No support for this flavor of linux; exit 1;
+                fi
+            requiresPrivilege: true
+        macos: brew install docker
+        windows: head explodes!

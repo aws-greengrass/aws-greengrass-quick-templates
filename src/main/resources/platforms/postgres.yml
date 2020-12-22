@@ -1,0 +1,22 @@
+## Template recipe for postgres
+---
+recipeFormatVersion: 2020-01-25
+componentName: postgres
+componentVersion: 13.0.0
+componentDescription: The postgres database
+componentPublisher: Amazon
+componentDependencies:
+  docker:
+    versionRequirement: 1.9.0
+componentConfiguration:
+  defaultConfiguration:
+    password: somethinglessstupid
+
+#include("platforms/standard.yml")
+
+lifecycle:
+  install:
+    skipif: onpath postgres
+    script:
+        docker pull postgres
+  run: docker run --name my_postgres  -e POSTGRES_PASSWORD={configuration:password} -d postgres

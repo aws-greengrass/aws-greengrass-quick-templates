@@ -1,0 +1,19 @@
+## Template recipe for Java projects
+
+# $ctx.platform("java.yml")
+---
+recipeFormatVersion: 2020-01-25
+componentName: $name
+componentVersion: $version
+componentDescription: $description
+componentPublisher: $publisher
+componentDependencies:
+  java:
+    VersionRequirement: ^$javaVersion.0.0
+
+#include("platforms/standard.yml")
+
+lifecycle:
+  run:
+    posix: ln -f -s -t . {artifacts:path}/*; java -cp . -jar $file
+    windows: whatever

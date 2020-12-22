@@ -1,0 +1,10 @@
+#!/usr/sh
+
+if [ -z "$JAVA_HOME" ] ; then
+  JAVACMD=`which java`
+else
+  JAVACMD="$JAVA_HOME/bin/java"
+fi
+
+
+"${JAVACMD:=java}" -jar $(cd "$(dirname "$0")"; cd ../lib; pwd)/foo.jar "$@"

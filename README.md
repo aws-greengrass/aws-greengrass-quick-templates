@@ -1,5 +1,11 @@
 # ggqt — Greengrass Quick Templates
 
+## TL;DR
+To install:
+```
+curl https://github.com/aws-greengrass/aws-greengrass-quick-templates/raw/main/install.sh|bash
+```
+## Description
 Normally, to deploy something to a device, you have to construct recipe and artifact directories and populate them.  This has some powerful uses, but it can be cumbersome for simple projects. Fortunately, they can be automatically generated for you from program code using `ggqt`.  For example:
 ```
 echo 'print("Hello from Python!")'>hello.py

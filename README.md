@@ -8,8 +8,8 @@ Option | Description
 <nobr>-r _ggdir_</nobr>| The directory in which greengrass is installed
 <nobr>-gtd _tdir_ </nobr>| The directory into which the generated templates (recipes & assets) are placed
 <nobr>-g _group_ </nobr>| The group parameter for this deployment
-<nobr>-to _region_</nobr> | Causes the constructed components to be uploaded to _region_, instead of being deployed locally.
 <nobr>-dr &boxv; --dryrun</nobr> | Do not deploy the constructed component or upload it to a region
+<nobr>-to _region_</nobr> | Causes the constructed components to be uploaded to _region_, instead of being deployed locally. _(sadly, at this moment, the implementation is incomplete, so don't use it)_
 <nobr>-u</nobr> | Same as -to _defaultRegion_.
 _files_ | A list of files to be bundled into a component.  All of the files become the artifacts of the component.  The first file is used to decide what template to use to construct the main recipe for the component, based mostly on the file's extension.  For example, a `.py` file will construct a recipe that executes the first file as a python program.  If no template can be found from the files extension, then if the first file is executable (as an `a.out` would be) it is executed directly; if it's first two bytes are `#!`, then it is executed as a shell script.
 

@@ -1,6 +1,18 @@
 # ggqt — Greengrass Quick Templates
 
 ## TL;DR
+<pre><b>ggqt</b> [-r <i>ggdir</i>] [-gtd <i>tdir</i>] [-g <i>group</i>] [-to <i>region</i>] [--dryrun | -dr] [--upload | -u] <i>files...</i></pre>
+
+Option | Description
+----- | -----
+-r _ggdir_| The directory in which greengrass is installed
+-gtd _tdir_ | The directory into which the generated templates (recipes & assets) are placed
+-g _group_ | The group parameter for this deployment
+-to _region_ | Causes the constructed components to be uploaded to _region_, instead of being deployed locally.
+-dr | Dryrun.  Do not deploy the constructed component or upload it to a region
+-u | Same as -to _defaultRegion_.
+_files_ | A list of files to be bundled into a component.  All of the files become the artifacts of the component.  The first file is used to decide what template to use to construct the main recipe for the component, based mostly on the file's extension.  For example, a `.py` file will construct a recipe that executes the first file as a python program.  If no template can be found from the files extension, then if the first file is executable (as an `a.out` would be) it is executed directly; if it's first two bytes are `#!`, then it is executed as a shell script.
+
 To install:
 ```
 curl https://github.com/aws-greengrass/aws-greengrass-quick-templates/raw/main/install.sh|bash

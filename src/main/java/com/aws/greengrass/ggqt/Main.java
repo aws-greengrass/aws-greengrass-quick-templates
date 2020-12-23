@@ -4,6 +4,8 @@
  */
 package com.aws.greengrass.ggqt;
 
+import java.awt.*;
+import java.net.*;
 import java.util.*;
 
 public class Main {
@@ -11,8 +13,11 @@ public class Main {
         GTD, GROUP, ROOT, REGION, NONE
     }
     final String[] args;
+    boolean verbose = false;
     public static void main(String[] cmd) {
-        System.exit(new Main(cmd).exec());
+        int ret = new Main(cmd).exec();
+        if(ret!=0) showHelp();
+        System.exit(ret&0xFF);
     }
     public Main(String[] args) {
         this.args = args;
@@ -66,7 +71,18 @@ public class Main {
                             tc.cloud = CloudOps.dflt();
                             tc.dryrun = true;
                             break;
+                        case "--verbose":
+                        case "-v":
+                            verbose = true;
+                            break;
+                        case "--help":
+                        case "-h":
+                            return 256; // sic
                         default:
+                            if(s.startsWith("-")) {
+                                System.out.println("Illegal argument: "+s);
+                                return 1;
+                            }
                             files.add(s);
                             break;
                     }
@@ -83,7 +99,17 @@ public class Main {
             String m = c.getLocalizedMessage();
             if (m == null || m.length() == 0) m = c.toString();
             System.out.println(m);
+            if(verbose) t.printStackTrace(System.out);
             return 1;
         }
+    }
+    private static final String helpUrl = "https://github.com/aws-greengrass/"
+            + "aws-greengrass-quick-templates/blob/main/README.md";
+    @SuppressWarnings("TooBroadCatch")
+    public static void showHelp() {
+        System.out.println("Help is available at "+helpUrl);
+        try {
+            Desktop.getDesktop().browse(new URI(helpUrl));
+        } catch(Throwable t) {}
     }
 }

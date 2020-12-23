@@ -5,19 +5,9 @@
 package com.aws.greengrass.ggqt;
 
 //import com.aws.greengrass.cli.CLI;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.io.TempDir;
+import java.io.*;
+import java.nio.file.*;
+import org.junit.jupiter.api.*;
 
 /**
  * This is a pretty simplistic test. It just checks that a selection of quick
@@ -77,6 +67,11 @@ public class TemplateCommandTest {
             expect("HelloWorldForever/recipes/HelloWorldForever-1.0.yaml");
         }
     }
+    @Test
+    public void test_help() {
+        Assertions.assertTrue(run("--help") == 256);
+        Main.showHelp();
+    }
 
     @Test
     public void test_failure() {
@@ -88,6 +83,12 @@ public class TemplateCommandTest {
     @Test
     public void test_failure2() {
         Assertions.assertTrue(run("--ggcRootPath",
+                System.getProperty("user.home") + "/.greengrass",
+                "--dryrun", "foo.py") != 0);
+    }
+    @Test
+    public void test_failure3() {
+        Assertions.assertTrue(run("--misspelled",
                 System.getProperty("user.home") + "/.greengrass",
                 "--dryrun", "foo.py") != 0);
     }

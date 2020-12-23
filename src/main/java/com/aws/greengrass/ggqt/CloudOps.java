@@ -31,8 +31,7 @@ public class CloudOps {
                 .build();
     }
     private CloudOps() {
-        client = GreengrassV2Client.builder()
-                .build();
+        client = GreengrassV2Client.create();
     }
     static final ConcurrentHashMap<Region, CloudOps> regions = new ConcurrentHashMap<>();
     static CloudOps dfltCloud = null;

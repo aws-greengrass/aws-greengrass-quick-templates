@@ -4,16 +4,20 @@
  */
 package com.aws.greengrass.ggqt;
 
+import com.vdurmont.semver4j.*;
 import org.junit.jupiter.api.*;
 import software.amazon.awssdk.regions.*;
+import software.amazon.awssdk.services.greengrassv2.model.*;
 
 public class CloudOpsTest {
+    static final boolean runTest = CloudOps.haveAWScreds;
     CloudOps cloud = CloudOps.of(Region.US_WEST_2);
     @Test
     public void T1() {
+        if(!runTest) return;
         System.out.println("In CloudOpsTest T1");
         try {
-        cloud.uploadRecipe("---\n"
+        cloud.uploadRecipe("lua", new Semver("5.3.0"), "---\n"
                 + "recipeFormatVersion: 2020-01-25\n"
                 + "componentName: lua\n"
                 + "componentVersion: 5.3.0\n"
@@ -56,14 +60,21 @@ public class CloudOpsTest {
         }
         cloud.components().forEach(c -> {
             System.out.println(c.componentName() + " " + c.arn());
+            ComponentLatestVersion lv = c.latestVersion();
+            System.out.println("\t"+lv
+            +"\n\t"+lv.componentVersion()
+            +"\n\t"+lv.description()
+            +"\n\t"+lv.arn());
             c.sdkFields().forEach(
                     f -> System.out.println(
                             "  " + f.unmarshallLocationName()
                             + " = " + f));
+//            SdkField lv = c.
         });
     }
     @Test
     public void T2() {
+        if(!runTest) return;
         System.out.println("In CloudOpsTest T2");
         cloud.coreDevices().forEach(c -> {
             System.out.println(c.coreDeviceThingName() + " " + c.

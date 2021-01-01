@@ -9,7 +9,7 @@ componentDescription: $description
 componentPublisher: $publisher
 componentDependencies:
   lua:
-    versionRequirement: 5.3.0
+    versionRequirement: ^5.3
 
 #include("platforms/standard.yml")
 

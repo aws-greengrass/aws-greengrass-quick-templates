@@ -4,16 +4,18 @@
  */
 package com.aws.greengrass.ggqt;
 
+import static com.aws.greengrass.ggqt.TemplateCommand.*;
+import com.vdurmont.semver4j.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.regex.*;
 
 class RecipieFile {
     private final String body;
-    final String componentName;
-    final String componentVersion;
-    final String componentDescription;
-    final String componentPublisher;
+    final String name;
+    final Semver version;
+    final String description;
+    final String publisher;
     final String group;
     final String hashbang;
     final String filename;
@@ -21,25 +23,33 @@ class RecipieFile {
     RecipieFile(String fn, String b, boolean is) {
         isRecipe = is;
         filename = fn;
-        String name = TemplateCommand.chopExtension(fn);
-        Matcher version = Pattern.compile("-[0-9]").matcher(name);
+        String fnName = TemplateCommand.chopExtension(fn);
+        Matcher versionStart = Pattern.compile("-[0-9]").matcher(fnName);
         String p1;
         String p2;
-        if (version.find()) {
-            p1 = name.substring(0, version.start());
-            p2 = name.substring(version.start() + 1);
+        if (versionStart.find()) {
+            p1 = fnName.substring(0, versionStart.start());
+            p2 = fnName.substring(versionStart.start() + 1);
         } else {
-            p1 = name;
+            p1 = fnName;
             p2 = "0.0.0";
         }
         body = b;
-        componentName = getPart("name", p1);
-        componentVersion = TemplateCommand.cleanVersion(getPart("version", p2));
-        componentDescription = getPart("description", null);
-        componentPublisher = getPart("publisher", null);
+        name = getPart("name", p1);
+        version = new Semver(cleanVersion(getPart("version", p2)),
+                Semver.SemverType.NPM);
+        description = getPart("description", null);
+        publisher = getPart("publisher", null);
         group = getPart("Group", null);
         Matcher m = Pattern.compile("#! *(.*)").matcher(body);
         hashbang = m.lookingAt() ? m.group(1) : null;
+    }
+    public static String cleanVersion(String version) {
+        if (isEmpty(version))
+            version = "0.0.0";
+        if (version.endsWith("-SNAPSHOT"))
+            version = version.substring(0, version.length() - 9);
+        return version;
     }
     private String getPart(String part, String dflt) {
         Matcher m = Pattern.
@@ -57,7 +67,7 @@ class RecipieFile {
     public void write(Path dir) throws IOException {
         if (isRecipe) {
             Path fn = dir.
-                    resolve(componentName + '-' + componentVersion + ".yaml");
+                    resolve(name + '-' + version + ".yaml");
             System.out.println("Writing " + fn);
             try (final Writer out = Files.
                     newBufferedWriter(fn, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
@@ -67,8 +77,8 @@ class RecipieFile {
     }
     public void upload(CloudOps cloud) throws IOException {
         if (isRecipe) {
-            System.out.println("Uploading "+componentName+'-'+componentVersion);
-            cloud.uploadRecipe(body);
+            System.out.println("Uploading "+name+'-'+version);
+            cloud.uploadRecipe(name, version, body);
         }
     }
 }

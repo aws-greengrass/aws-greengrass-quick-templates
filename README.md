@@ -3,7 +3,7 @@
 ## TL;DR
 <pre><b>ggqt</b> [-r <i>ggdir</i>] [-gtd <i>tdir</i>] [-g <i>group</i>] [-to <i>region</i>] [--dryrun | -dr] [--upload | -u] <i>files...</i></pre>
 
-Option&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description
+Option&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description
 ------ | -----
 `-r` _ggdir_| The directory in which greengrass is installed
 `-gtd` _tdir_| The directory into which the generated templates (recipes & assets) are placed

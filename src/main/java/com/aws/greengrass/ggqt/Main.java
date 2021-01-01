@@ -10,7 +10,7 @@ import java.util.*;
 
 public class Main {
     enum Dest {
-        GTD, GROUP, ROOT, REGION, NONE
+        GTD, GROUP, ROOT, REGION, BUCKET, NONE
     }
     final String[] args;
     boolean verbose = false;
@@ -44,8 +44,16 @@ public class Main {
                     dest = Dest.NONE;
                     tc.cloud = CloudOps.of(s);
                     break;
+                case BUCKET:
+                    dest = Dest.NONE;
+                    tc.bucket = s;
+                    break;
                 default:
                     switch (s) {
+                        case "-b":
+                        case "--bucket":
+                            dest = Dest.BUCKET;
+                            break;
                         case "-r":
                         case "--ggcRootPath":
                             dest = Dest.ROOT;

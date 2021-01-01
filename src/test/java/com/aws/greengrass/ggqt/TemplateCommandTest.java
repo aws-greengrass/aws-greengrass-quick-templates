@@ -70,7 +70,7 @@ public class TemplateCommandTest {
     @Test
     public void test_help() {
         Assertions.assertTrue(run("--help") == 256);
-        Main.showHelp();
+//        Main.showHelp();
     }
 
     @Test
@@ -109,7 +109,7 @@ public class TemplateCommandTest {
         try {
             System.out.println("Testing " + name);
             Assertions.assertTrue(run("--ggcRootPath",
-                    "/opt/GGv2", "--dryrun",
+                    "/opt/GGv2", "--dryrun", "-v",
                     "-gtd", templates.toString(),
                     name) == 0);
         } catch (Throwable t) {

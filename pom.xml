@@ -105,7 +105,7 @@
     <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>s3</artifactId>
-        <version>2.14.13</version>
+        <version>2.15.45</version>
         <exclusions>
             <exclusion>
                 <groupId>software.amazon.awssdk</groupId>
@@ -117,6 +117,16 @@
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vdurmont</groupId>
+            <artifactId>semver4j</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+            <version>2.15.45</version>
         </dependency>
     </dependencies>
     <properties>

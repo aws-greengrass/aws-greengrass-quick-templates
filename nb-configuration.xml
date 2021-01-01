@@ -52,5 +52,7 @@ Any value defined here will override the pom.xml file value but is only applicab
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.sortUsesDependencies>false</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.sortUsesDependencies>
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.sortMembersByVisibility>true</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.sortMembersByVisibility>
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.keepGettersAndSettersTogether>true</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.keepGettersAndSettersTogether>
+        <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterDotInChainedMethodCalls>false</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterDotInChainedMethodCalls>
+        <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterAssignOps>true</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterAssignOps>
     </properties>
 </project-shared-configuration>

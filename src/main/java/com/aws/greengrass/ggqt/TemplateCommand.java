@@ -4,6 +4,7 @@
  */
 package com.aws.greengrass.ggqt;
 
+import com.vdurmont.semver4j.*;
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
@@ -18,6 +19,14 @@ import org.apache.velocity.runtime.*;
 import org.apache.velocity.runtime.resource.loader.*;
 
 public class TemplateCommand {
+    // see https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    private static final String officialSemverRegex =
+            "^(?P<major>0|[1-9]\\d*)\\."
+            + "(?P<minor>0|[1-9]\\d*)\\."
+            + "(?P<patch>0|[1-9]\\d*)"
+            + "(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)"
+            + "(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+            + "(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$";
     boolean dryrun;
     CloudOps cloud;
     String generatedTemplateDirectory = "~/gg2Templates";
@@ -25,6 +34,7 @@ public class TemplateCommand {
     String[] files;
     private String recipeDir;
     private String artifactDir;
+    String bucket;
     private Path genTemplateDir;
     private final ArrayList<String> params = new ArrayList<>();
     private Path localTemplateDir;
@@ -33,6 +43,7 @@ public class TemplateCommand {
     private String javaVersion = "11";
     private final Map<String, RecipieFile> recipes = new LinkedHashMap<>();
     public void run() {
+        if (cloud != null) cloud.setBucket(bucket);
         genTemplateDir = Paths.get(deTilde(generatedTemplateDirectory));
         if (files == null || files.length == 0)
             err("cli.tpl.files");
@@ -40,8 +51,8 @@ public class TemplateCommand {
         if (keyFile == null)
             err("cli.tpl.files");
         build();
-        if(cloud!=null) doUpload();
-        if(!dryrun) deploy();
+        if (cloud != null) doUpload();
+        if (!dryrun) deploy();
     }
     private int scanFiles() {
         for (String fn : files)
@@ -76,8 +87,8 @@ public class TemplateCommand {
     }
     private String ReadFirst(URL u) {
         if (u != null)
-            try (Reader in = new InputStreamReader(new BufferedInputStream(u.
-                openStream()))) {
+            try ( Reader in = new InputStreamReader(new BufferedInputStream(u
+                .openStream()))) {
             StringBuilder sb = new StringBuilder();
             int c;
             int limit = 4000;
@@ -91,28 +102,28 @@ public class TemplateCommand {
     }
     @SuppressWarnings("UseSpecificCatch")
     public void build() {
-        String componentName = keyFile.componentName;
-        String componentVersion = keyFile.componentVersion;
+        String name = keyFile.name;
+        Semver version = keyFile.version;
         if (genTemplateDir == null)
             genTemplateDir = Paths.
                     get(System.getProperty("user.home", "/tmp"), "gg2Templates");
         localTemplateDir = genTemplateDir.resolve("templates");
         if (recipeDir != null) {
             if (artifactDir == null)
-                artifactDir = new File(new File(recipeDir).getParentFile(), "artifacts").
-                        toString();
+                artifactDir = new File(new File(recipeDir).getParentFile(), "artifacts")
+                        .toString();
         } else if (artifactDir != null)
-            recipeDir = new File(new File(artifactDir).getParentFile(), "recipes").
-                    toString();
-        else if (componentName != null) {
-            artifactDir = genTemplateDir.resolve(componentName).
+            recipeDir = new File(new File(artifactDir).getParentFile(), "recipes")
+                    .toString();
+        else if (name != null) {
+            artifactDir = genTemplateDir.resolve(name).
                     resolve("artifacts").toString();
-            recipeDir = genTemplateDir.resolve(componentName).resolve("recipes").
+            recipeDir = genTemplateDir.resolve(name).resolve("recipes").
                     toString();
         }
         generateTemplate();
-        Path ad = Paths.get(artifactDir).resolve(componentName).
-                resolve(componentVersion);
+        Path ad = Paths.get(artifactDir).resolve(name).
+                resolve(version.toString());
         Path rd = Paths.get(recipeDir);
         System.out.println("Artifacts in " + ad + "\nRecipes in " + rd);
         try {
@@ -130,7 +141,7 @@ public class TemplateCommand {
                 err("cli.tpl.cnc", fn);
             }
         });
-        recipes.forEach((name, body) -> {
+        recipes.values().forEach(body -> {
             try {
                 body.write(rd);
             } catch (Throwable ex) {
@@ -142,24 +153,18 @@ public class TemplateCommand {
     private void generateTemplate() {
         if (!keyFile.isRecipe) {
             keyPath = Paths.get(keyFile.filename);
-            String templateName;
-            if (keyFile.hashbang != null)
-                templateName = "hashbang.yml";
-            else if (Files.isExecutable(keyPath))
-                templateName = "executable.yml";
-            else if (keyFile != null)
-                templateName = extension(keyFile.filename) + ".yml";
-            else {
-                err("cli.tpl.nbasis", null);
-                templateName = "error.yaml";
-            }
+            final String templateName =
+                    keyFile.hashbang != null ? "hashbang.yml"
+                  : Files.isExecutable(keyPath) ? "executable.yml"
+                  : keyFile != null ? extension(keyFile.filename) + ".yml"
+                  : err("cli.tpl.nbasis", null);
             try {
                 StringWriter tls = new StringWriter();
                 getVelocityEngine()
                         .getTemplate("templates/" + templateName, "UTF-8")
                         .merge(context, tls);
-                addRecipe(keyFile.componentName + '-' + keyFile.componentVersion, tls.
-                        toString());
+                addRecipe(keyFile.name + '-' + keyFile.version,
+                        tls.toString());
             } catch (Throwable t) {
                 err("cli.tpl.nft", keyFile);
             }
@@ -176,20 +181,20 @@ public class TemplateCommand {
             velocityEngine.
                     setProperty(RuntimeConstants.RESOURCE_LOADER, "file,classpath");
             velocityEngine.
-                    setProperty("classpath.resource.loader.class", ClasspathResourceLoader.class.
-                            getName());
+                    setProperty("classpath.resource.loader.class",
+                            ClasspathResourceLoader.class.getName());
             velocityEngine.
-                    setProperty(RuntimeConstants.FILE_RESOURCE_LOADER_PATH, localTemplateDir.
-                            toString());
+                    setProperty(RuntimeConstants.FILE_RESOURCE_LOADER_PATH, localTemplateDir
+                            .toString());
             velocityEngine.init();
-            context.put("name", keyFile.componentName);
-            context.put("version", keyFile.componentVersion);
-            context.put("publisher", !isEmpty(keyFile.componentPublisher)
-                    ? keyFile.componentPublisher
+            context.put("name", keyFile.name);
+            context.put("version", keyFile.version);
+            context.put("publisher", !isEmpty(keyFile.publisher)
+                    ? keyFile.publisher
                     : System.getProperty("user.name", "Unknown"));
             String description;
-            if (keyFile != null && !isEmpty(keyFile.componentDescription))
-                description = keyFile.componentDescription;
+            if (keyFile != null && !isEmpty(keyFile.description))
+                description = keyFile.description;
             else {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Created for ")
@@ -223,7 +228,7 @@ public class TemplateCommand {
         return velocityEngine;
     }
     private void harvestJar(String pn) {
-        try (JarFile jar = new JarFile(new File(pn))) {
+        try ( JarFile jar = new JarFile(new File(pn))) {
             Manifest m = jar.getManifest();
             if (m != null) {
                 Attributes a = m.getMainAttributes();
@@ -243,8 +248,8 @@ public class TemplateCommand {
             jar.stream().forEach(e -> {
                 String name = e.getName();
                 if (name.startsWith("RECIPES/") && isRecipe(name))
-                    try (Reader in = new InputStreamReader(jar.
-                        getInputStream(e))) {
+                    try ( Reader in = new InputStreamReader(jar
+                        .getInputStream(e))) {
                     addRecipe(e.getName(), capture(in));
                 } catch (IOException ioe) {
                     err("cli.tpl.crj", e.getName());
@@ -265,7 +270,7 @@ public class TemplateCommand {
         args.add("-a");
         args.add(artifactDir);
         args.add("-m");
-        args.add(keyFile.componentName + "=" + keyFile.componentVersion);
+        args.add(keyFile.name + "=" + keyFile.version);
         if (!isEmpty(group)) {
             args.add("-g");
             args.add(group);
@@ -298,7 +303,7 @@ public class TemplateCommand {
     private void err(String tag) {
         err(tag, null);
     }
-    private void err(String tag, Object aux) {
+    private String err(String tag, Object aux) {
         String msg = ResourceBundle
                 .getBundle("com.aws.greengrass.cli.CLI_messages")
                 .getString(tag);
@@ -316,12 +321,12 @@ public class TemplateCommand {
             ret = new RecipieFile(name, body, true);
             if (keyFile == null)
                 keyFile = ret;
-            recipes.put(ret.componentName, ret);
+            recipes.put(ret.name, ret);
         }
         return ret;
     }
     private String capture(Path in) {
-        try (Reader is = Files.newBufferedReader(in)) {
+        try ( Reader is = Files.newBufferedReader(in)) {
             return capture(is);
         } catch (IOException ex) {
             err("cli.tpl.erd", ex);
@@ -384,13 +389,6 @@ public class TemplateCommand {
             f = f.substring(0, m.start());
         return f;
     }
-    public static String cleanVersion(String version) {
-        if (isEmpty(version))
-            version = "0.0.0";
-        if (version.endsWith("-SNAPSHOT"))
-            version = version.substring(0, version.length() - 9);
-        return version;
-    }
     String rootPath = null;
     public String getGgcRootPath() {
         if (rootPath == null) {
@@ -404,7 +402,7 @@ public class TemplateCommand {
                 rootPath = isDir("/usr/local/greengrass");
             if (rootPath == null)
                 rootPath = isDir("/opt/greengrass");
-            if(rootPath==null)
+            if (rootPath == null)
                 rootPath = "$GGC_ROOT_PATH";
         }
         return rootPath;
@@ -416,7 +414,7 @@ public class TemplateCommand {
             exc = canExecute("/usr/bin/greengrass-cli");
         if (exc == null)
             exc = canExecute("/usr/local/bin/greengrass-cli");
-        if(exc == null) {
+        if (exc == null) {
             System.err.println("Can't find greengrass-cli");
             return -1;
         }
@@ -434,12 +432,11 @@ public class TemplateCommand {
         }
     }
     private static String isDir(String d) {
-        return d!=null && new File(d).isDirectory() ? d : null;
+        return d != null && new File(d).isDirectory() ? d : null;
     }
     private static String canExecute(String d) {
-        return d!=null && new File(d).canExecute() ? d : null;
+        return d != null && new File(d).canExecute() ? d : null;
     }
-    
     private static final String HOME = System.getProperty("user.home", "/tmp");
     public String deTilde(String s) {
         return isEmpty(s) ? null : s.startsWith("~/") ? HOME + s.substring(1) : s;

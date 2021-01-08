@@ -12,12 +12,12 @@ Option&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&num
 `-u` &boxv; `--upload` | Causes the constructed components to be uploaded to the current region, instead of being deployed locally. (see below)
 _files..._ | A list of files to be bundled into a component.  All of the files become the artifacts of the component.  The first file is used to decide what template to use to construct the main recipe for the component, based mostly on the file's extension.  For example, a `.py` file will construct a recipe that executes the first file as a python program.  If no template can be found from the files extension, then if the first file is executable (as an `a.out` would be) it is executed directly; if it's first two bytes are `#!`, then it is executed as a shell script.
 
-###To install:
+### To install:
 ```
 curl https://github.com/aws-greengrass/aws-greengrass-quick-templates/raw/main/install.sh|bash
 ```
 
-###Caveat Emptor
+### Caveat Emptor
 This tool is more of a &ldquo;labs&rdquo; project.  It does not get the same rigorous testing as the nucleus and is officially unsupported.  But it is an active project: issues and PRs will be responded to on a reasonable-effort basis.
 
 ## Description

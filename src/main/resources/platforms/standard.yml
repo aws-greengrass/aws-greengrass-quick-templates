@@ -4,12 +4,15 @@ manifests:
       os: windows
     name: "Windows"
     selections: [windows]
+    artifacts:
   - platform:
       os: darwin
     name: "MacOS"
     selections: [macos,posix]
+    artifacts:
 # differentiating versions of linux is currently incomplete
   - platform:
       os: all
     name: "Posix"
     selections: [posix]
+    artifacts:

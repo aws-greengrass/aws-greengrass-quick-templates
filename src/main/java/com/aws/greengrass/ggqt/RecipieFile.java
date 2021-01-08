@@ -53,8 +53,8 @@ class RecipieFile {
     }
     private String getPart(String part, String dflt) {
         Matcher m = Pattern.
-                compile("component[ -_]?" + part + ": *([^;,\n\"]+)", Pattern.CASE_INSENSITIVE).
-                matcher(body);
+                compile("component[ -_]?" + part + ": *([^;,\n\"]+)", Pattern.CASE_INSENSITIVE)
+                .matcher(body);
         return clean(m.find() ? m.group(1) : dflt, dflt);
     }
     private String clean(String s, String dflt) {
@@ -66,19 +66,39 @@ class RecipieFile {
     }
     public void write(Path dir) throws IOException {
         if (isRecipe) {
-            Path fn = dir.
-                    resolve(name + '-' + version + ".yaml");
-            System.out.println("Writing " + fn);
+            Path fn = dir.resolve(name + '-' + version + ".yaml");
             try (final Writer out = Files.
                     newBufferedWriter(fn, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
                 out.write(body);
             }
         }
     }
-    public void upload(CloudOps cloud) throws IOException {
+    public void upload(CloudOps cloud, String artifactURL) throws IOException {
         if (isRecipe) {
-            System.out.println("Uploading "+name+'-'+version);
-            cloud.uploadRecipe(name, version, body);
+            /* Most of the work here is updating the artifacts: clauses */
+            StringBuilder sb = new StringBuilder();
+            int pst = 0;
+            Matcher m = Pattern
+                    .compile("^([ \t]*)artifacts:.*\n",
+                            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
+                    .matcher(body);
+            while (m.find()) {
+                sb.append(body, pst, m.start());
+                pst = m.end();
+                if (artifactURL != null) {
+                    String prefix = m.group(1);
+                    sb.append(prefix)
+                            .append("artifacts:\n")
+                            .append(prefix)
+                            .append("  - uri: ")
+                            .append(artifactURL)
+                            .append('\n')
+                            .append(prefix)
+                            .append("    unarchive: ZIP\n");
+                }
+            }
+            sb.append(body, pst, body.length());
+            cloud.uploadRecipe(name, version, sb.toString());
         }
     }
 }

@@ -13,7 +13,6 @@ public class Main {
         GTD, GROUP, ROOT, REGION, BUCKET, NONE
     }
     final String[] args;
-    boolean verbose = false;
     public static void main(String[] cmd) {
         int ret = new Main(cmd).exec();
         if(ret!=0) showHelp();
@@ -81,7 +80,7 @@ public class Main {
                             break;
                         case "--verbose":
                         case "-v":
-                            verbose = true;
+                            tc.verbose = true;
                             break;
                         case "--help":
                         case "-h":
@@ -107,7 +106,7 @@ public class Main {
             String m = c.getLocalizedMessage();
             if (m == null || m.length() == 0) m = c.toString();
             System.out.println(m);
-            if(verbose) t.printStackTrace(System.out);
+            if(tc.verbose) t.printStackTrace(System.out);
             return 1;
         }
     }

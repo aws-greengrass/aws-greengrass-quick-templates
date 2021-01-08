@@ -8,11 +8,14 @@ import com.vdurmont.semver4j.*;
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
+import java.security.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
 import java.util.jar.*;
+import java.util.logging.*;
 import java.util.regex.*;
+import java.util.zip.*;
 import org.apache.velocity.*;
 import org.apache.velocity.app.*;
 import org.apache.velocity.runtime.*;
@@ -20,13 +23,7 @@ import org.apache.velocity.runtime.resource.loader.*;
 
 public class TemplateCommand {
     // see https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-    private static final String officialSemverRegex =
-            "^(?P<major>0|[1-9]\\d*)\\."
-            + "(?P<minor>0|[1-9]\\d*)\\."
-            + "(?P<patch>0|[1-9]\\d*)"
-            + "(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)"
-            + "(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
-            + "(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$";
+
     boolean dryrun;
     CloudOps cloud;
     String generatedTemplateDirectory = "~/gg2Templates";
@@ -34,11 +31,14 @@ public class TemplateCommand {
     String[] files;
     private String recipeDir;
     private String artifactDir;
+    boolean verbose = false;
     String bucket;
     private Path genTemplateDir;
     private final ArrayList<String> params = new ArrayList<>();
     private Path localTemplateDir;
-    private RecipieFile keyFile;
+    private RecipieFile keyFile,
+            generatedRecipe;
+    private String artifactURL;
     private final List<String> artifacts = new ArrayList<>();
     private String javaVersion = "11";
     private final Map<String, RecipieFile> recipes = new LinkedHashMap<>();
@@ -155,15 +155,15 @@ public class TemplateCommand {
             keyPath = Paths.get(keyFile.filename);
             final String templateName =
                     keyFile.hashbang != null ? "hashbang.yml"
-                  : Files.isExecutable(keyPath) ? "executable.yml"
-                  : keyFile != null ? extension(keyFile.filename) + ".yml"
-                  : err("cli.tpl.nbasis", null);
+                            : Files.isExecutable(keyPath) ? "executable.yml"
+                            : keyFile != null ? extension(keyFile.filename) + ".yml"
+                                    : err("cli.tpl.nbasis", null);
             try {
                 StringWriter tls = new StringWriter();
                 getVelocityEngine()
                         .getTemplate("templates/" + templateName, "UTF-8")
                         .merge(context, tls);
-                addRecipe(keyFile.name + '-' + keyFile.version,
+                generatedRecipe = addRecipe(keyFile.name + '-' + keyFile.version,
                         tls.toString());
             } catch (Throwable t) {
                 err("cli.tpl.nft", keyFile);
@@ -287,13 +287,65 @@ public class TemplateCommand {
             err("cli.tpl.deploy");
     }
     public void doUpload() {
-        recipes.forEach((name, body) -> {
+        if (!artifacts.isEmpty()) try {  // create zip file of artifacts
+            Path zip = Paths.get(artifactDir).getParent()
+                    .resolve(keyFile.name + ".zip");
+            for(Provider p:Security.getProviders()) {
+                System.out.println(">>> "+p);
+                p.entrySet().forEach(e->System.out.println("\t"+e.getKey()+":\t"+e.getValue()));
+            }
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            try ( OutputStream out =
+                    new DigestOutputStream(
+                            Files.newOutputStream(zip,
+                                    StandardOpenOption.CREATE,
+                                    StandardOpenOption.WRITE,
+                                    StandardOpenOption.TRUNCATE_EXISTING),
+                            md);  ZipOutputStream zf = new ZipOutputStream(out)) {
+                artifacts.forEach(name -> {
+                    Path src = Paths.get(name);
+                    ZipEntry ze = new ZipEntry("../" + src.getFileName());
+                    try {
+                        System.out.println("Writing " + ze.getName());
+                        zf.putNextEntry(ze);
+                        Files.copy(src, zf);
+                        zf.closeEntry();
+                    } catch (IOException ex) {
+                        err("cli.tpl.err", ex);
+                    }
+                });
+                zf.close();
+                // We now have a zip file and it's hash.
+                Path nzip = zip.getParent().resolve(toString(md.digest()) + ".zip");
+                Files.move(zip, nzip,
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+                System.out.println("Archive zip file: " + nzip);
+                String s3key = nzip.getFileName().toString();
+                cloud.putObject(s3key, nzip);
+                artifactURL = "s3://"+cloud.getBucket()+"/"+s3key;
+            } catch (Throwable ioe) {
+                err("cli.tpl.err", ioe);
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(TemplateCommand.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        } else System.out.println("No artifacts to zip");
+        recipes.values().forEach(recipe -> {
             try {
-                body.upload(cloud);
+                recipe.upload(cloud, recipe==generatedRecipe || recipe==keyFile ? artifactURL : null);
             } catch (Throwable ex) {
                 err("cli.tpl.err", ex);
             }
         });
+    }
+    private static final char[] hex = "0123456789ABCDEF".toCharArray();
+    public static String toString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        if (bytes != null)
+            for (byte b : bytes) sb.append(hex[(b >> 4) & 0xF])
+                        .append(hex[b & 0xF]);
+        return sb.toString();
     }
     private static final Pattern RECIPEPATTERN = Pattern.
             compile(".*\\.(yaml|yml|ggr)$");
@@ -304,6 +356,8 @@ public class TemplateCommand {
         err(tag, null);
     }
     private String err(String tag, Object aux) {
+        if(verbose && aux instanceof Throwable)
+            ((Throwable)aux).printStackTrace(System.out);
         String msg = ResourceBundle
                 .getBundle("com.aws.greengrass.cli.CLI_messages")
                 .getString(tag);

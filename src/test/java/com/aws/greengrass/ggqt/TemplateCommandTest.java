@@ -110,6 +110,7 @@ public class TemplateCommandTest {
             System.out.println("Testing " + name);
             Assertions.assertTrue(run("--ggcRootPath",
                     "/opt/GGv2", "--dryrun", "-v",
+                    "--upload",
                     "-gtd", templates.toString(),
                     name) == 0);
         } catch (Throwable t) {

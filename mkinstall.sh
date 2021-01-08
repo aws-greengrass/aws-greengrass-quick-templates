@@ -6,7 +6,6 @@ cd $(dirname $0)
 #pwd
 cat>install.sh<<'EOF'
 #!/bin/sh
-cd $(dirname $0)
 DEST=${1:-/usr/local}
 if [ -z "$JAVA_HOME" ] ; then
   JAVACMD=`which java`

@@ -290,10 +290,10 @@ public class TemplateCommand {
         if (!artifacts.isEmpty()) try {  // create zip file of artifacts
             Path zip = Paths.get(artifactDir).getParent()
                     .resolve(keyFile.name + ".zip");
-            for(Provider p:Security.getProviders()) {
-                System.out.println(">>> "+p);
-                p.entrySet().forEach(e->System.out.println("\t"+e.getKey()+":\t"+e.getValue()));
-            }
+//            for(Provider p:Security.getProviders()) {
+//                System.out.println(">>> "+p);
+//                p.entrySet().forEach(e->System.out.println("\t"+e.getKey()+":\t"+e.getValue()));
+//            }
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             try ( OutputStream out =
                     new DigestOutputStream(

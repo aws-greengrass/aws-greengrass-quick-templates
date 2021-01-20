@@ -14,7 +14,7 @@ _files..._ | A list of files to be bundled into a component.  All of the files b
 
 ### To install:
 ```
-curl https://github.com/aws-greengrass/aws-greengrass-quick-templates/raw/main/install.sh|bash
+curl https://raw.githubusercontent.com/aws-greengrass/aws-greengrass-quick-templates/main/install.sh  | sudo bash
 ```
 
 ### Caveat Emptor

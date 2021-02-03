@@ -27,7 +27,7 @@
                         <configuration>
                             <archive>
                                 <manifest>           
-                                    <mainClass>com.aws.greengrass.ggqt.Main</mainClass>
+                                    <mainClass>com.aws.greengrass.ggq.Main</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -77,11 +77,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws.services</groupId>
-            <artifactId>greengrassv2</artifactId>
-            <version>2.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>regions</artifactId>
             <version>2.15.17</version>
@@ -127,6 +122,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sts</artifactId>
             <version>2.15.45</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>greengrassv2</artifactId>
+            <version>2.15.69</version>
         </dependency>
     </dependencies>
     <properties>

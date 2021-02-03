@@ -6,7 +6,7 @@ componentVersion: 1.9.0
 componentDescription: The docker platform
 componentPublisher: Amazon
 
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
   install:

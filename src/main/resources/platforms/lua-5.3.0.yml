@@ -6,7 +6,7 @@ componentVersion: 5.3.0
 componentDescription: The lua platform
 componentPublisher: Amazon
 
-#include("platforms/standard.yml")
+#parse("platforms/manifests.yml")
 
 lifecycle:
   install:

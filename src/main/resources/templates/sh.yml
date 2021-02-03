@@ -1,14 +1,8 @@
 ## Template recipe for shell projects
----
-recipeFormatVersion: 2020-01-25
-componentName: $name
-componentVersion: $version
-componentDescription: $description
-componentPublisher: $publisher
-
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
-  run:
-    posix: ln -f -s -t . {artifacts:path}/*; sh $file
-    windows: whatever
+    install:
+        posix: ln -f -s -t . {artifacts:decompressedPath}/$zbase/*
+    run:
+        posix: sh $file

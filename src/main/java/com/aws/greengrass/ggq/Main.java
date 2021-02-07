@@ -260,7 +260,7 @@ public class Main {
             }
         }
     }
-    private void addKV(StringBuilder comps, String subKey, String value) {
+    static void addKV(StringBuilder comps, String subKey, String value) {
         int dot = subKey.indexOf('.');
         if (dot < 0) {
             quote(comps, subKey);
@@ -274,7 +274,7 @@ public class Main {
         }
     }
     private static final char[] hex = "0123456789ABCDEF".toCharArray();
-    private StringBuilder quote(StringBuilder sb, String str) {
+    static StringBuilder quote(StringBuilder sb, String str) {
         final int len = str.length();
         char c;
         sb.append('"');

@@ -5,7 +5,7 @@ componentName: $name
 componentVersion: $version
 componentDescription: $description
 componentPublisher: $publisher
-$ctx.genConfig()
-$ctx.genDependencies()
+# $ctx.genConfig()
+# $ctx.genDependencies()
 
 #parse("platforms/manifests.yml")

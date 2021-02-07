@@ -87,7 +87,6 @@ public class Watcher {
     }
     private static Object geto(Object m, String key) {
         Object ret = m instanceof Map ? ((Map) m).get(key) : null;
-        if(ret!=null && !ret.getClass().isArray()) System.out.println(key+": "+ret.getClass()+" "+ret);
         return ret;
     }
     private static String flatten(Object o) {
@@ -136,13 +135,13 @@ public class Watcher {
 //        }
         if (line.startsWith("{"))
             try {
-            Map err = json.readValue(line, Map.class);
-            String eventType = gets(err, "eventType");
-            String level = gets(err, "level");
-            Object context = err.get("contexts");
+            Map logEntry = json.readValue(line, Map.class);
+            String eventType = gets(logEntry, "eventType");
+            String level = gets(logEntry, "level");
+            Object context = logEntry.get("contexts");
             String serviceName = gets(context, "serviceName");
 //            String state = gets(context, "currentState");
-            String message = gets(err, "message");
+            String message = gets(logEntry, "message");
             char tag = ' ';
             switch (eventType) {
                 case "stderr": tag = ' ';
@@ -161,7 +160,7 @@ public class Watcher {
                     switch (level) {
                         case "WARN": tag = '*';
                             break;
-                        case "ERR": tag = '!';
+                        case "ERROR": tag = '!';
                             break;
                         default: tag = 0;
                     }
@@ -173,18 +172,35 @@ public class Watcher {
                 lastsname = serviceName;
             } else if (args.verbose) {
                 System.out.println("===========");
-                err.forEach((k, v) -> System.out
+                logEntry.forEach((k, v) -> System.out
                         .println("\t" + k + ":\t" + v));
             }
+            Object cause = geto(logEntry,"cause");
+            while(cause instanceof Map) {
+                Map mo = (Map) cause;
+                Object trace = mo.get("stackTrace");
+                String emsg = gets(mo,"message");
+                if(emsg!=null) System.out.printf("%-10s***%s\n", serviceName, emsg);
+                if(trace!=null && trace.getClass().isArray()) {
+                    int len = Array.getLength(trace);
+                    for(int i = 0; i<len; i++) {
+                        Object tl = Array.get(trace, i);
+                        System.out.println("\t\t\t"+gets(tl,"methodName") +
+                                " at "+gets(tl,"fileName") +
+                                ":" + gets(tl,"lineNumber"));
+                    }
+                }
+                cause = (Map) mo.get("cause");
+            }
         } catch (JsonProcessingException ex) {
-            System.out.println(ex);
+            System.out.println(from.path+": "+ex+"\n\t"+line);
 //                System.exit(0);
         } else if (logPattern.reset(line).matches()) {
             if (!notifiedJson) {
                 notifiedJson = true;
-                System.out
-                        .println("ggq --watch only works when the log format is JSON,\n"
-                                + "you can switch by ");
+                System.out.println(
+                        "ggq --watch only works when the log format is JSON,\n"
+                        + "you can switch with: ggq fmt=json");
             }
         } else System.out.println("? " + line);
     }

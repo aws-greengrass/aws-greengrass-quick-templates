@@ -1,17 +1,17 @@
 manifests:
   - platform:
-      os: windows
+        os: windows
     name: "Windows"
-    selections: [windows]
+    selections: [ "windows" ]
     artifacts: inject
   - platform:
-      os: darwin
+        os: darwin
     name: "MacOS"
-    selections: [macos,posix]
+    selections: [ "macos", "posix" ]
     artifacts: inject
 # differentiating versions of linux is currently incomplete
   - platform:
-      os: all
+        os: all
     name: "Posix"
-    selections: [posix]
+    selections: [ "posix" ]
     artifacts: inject

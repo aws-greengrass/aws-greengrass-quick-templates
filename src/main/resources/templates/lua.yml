@@ -5,6 +5,7 @@
 #parse("platforms/standard.yml")
 
 lifecycle:
+# $ctx.genEnv()
     install:
         posix: ln -f -s -t . {artifacts:decompressedPath}/$zbase/*
     run:

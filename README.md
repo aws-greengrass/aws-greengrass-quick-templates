@@ -1,9 +1,7 @@
 # ggq — GreenGrass Quick development tool
 
 ## TL;DR
-<pre><b>ggq</b> [--dryrun | -dr] [-g <i>group</i>] [-gtd <i>tdir</i>] [-pw] [-r <i>ggdir</i>]  [-rm <i>comp</i>] [--upload | -u] <i>files...</i>
-<b>ggq</b> --watch
-<b>ggq</b> key=value...</pre>
+<pre><b>ggq</b> [--dryrun | -dr] [-g <i>group</i>] [-gtd <i>tdir</i>] [-pw] [-r <i>ggdir</i>] [-rm <i>comp</i>] [--upload | -u] [--watch | -w] key=value... <i>files...</i></pre>
 
 Option&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp; | Description
 ------ | -----
@@ -44,11 +42,14 @@ sudo greengrass-cli --ggcRootPath ~/.greengrass deployment create \
 
 For a very simple case like this, the components name will be derived from the filename, in this case `hello`, and the version number will default to 0.0.0.  If the filename contains a version number, it will be taken from there.  For example, `hello-1.2.0.py` will have a version number of 1.2.0.
 
-You can also embed component name and version information as comments in the source file itself.  For example, if `hello.lua` looked like this:
-```
+You can also embed component information as comments in the source file itself.  For example, if `hello.lua` looked like this:
+```lua
 -- ComponentVersion: 1.1.0
 -- ComponentName: OlaLua
-print '¡Olá Lua!'
+-- ComponentDescription: Some fun with lua
+-- ComponentPublisher: HeionymousBosch
+-- ComponentConfiguration: message=¡Olá Lua!
+print(os.getenv("message"))
 ```
 The components name and version would be OlaLua and 1.1.0.  The template for the app recipe will also cause an installation recipe for *lua* to be included.  After execution, gg2Templates will contain these files:
 ```
@@ -61,15 +62,17 @@ The components name and version would be OlaLua and 1.1.0.  The template for the
 │       ├── OlaLua-1.1.0.yaml
 │       └── lua-5.3.0.yaml
 ```
-And the generated recipe, `OlaLua-1.1.0.yaml` will look like this:
-```
-# 
+And the generated recipe, `OlaLua-1.1.0.yaml` will look roughly like this:
+```yaml
 ---
 RecipeFormatVersion: 2020-01-25
 ComponentName: OlaLua
 ComponentVersion: 1.1.0
-ComponentDescription: Created for XXX on YYY from hello.lua
-ComponentPublisher: XXX
+ComponentDescription: Some fun with lua
+ComponentPublisher: HeionymousBosch
+ComponentConfiguration:
+  DefaultConfiguration:
+    message: ¡Olá Lua!
 ComponentDependencies:
   lua:
     VersionRequirement: ^5.1.0
@@ -77,10 +80,11 @@ ComponentDependencies:
 Manifests:
   - Platform:
       os: all
-    Lifecycle:
-      Run:
-        posix: ln -f -s -t . {artifacts:path}/*; lua hello.lua
-        windows: whatever
+
+Lifecycle:
+  setenv:
+     message: '{configuration:/message}'
+  Run: ln -f -s -t . {artifacts:path}/*; lua hello.lua
 ```
 
 If the first two characters of the file are "`#!`", then it will be treated as an executable script:

@@ -455,23 +455,24 @@ public class TemplateCommand {
         }
         public String genConfig() {
             Map<String, String> m = keyFile.configuration;
-            if (m.isEmpty()) return "";
+            if (m.isEmpty()) return "\n";
             StringBuilder sb = new StringBuilder();
-            sb.append("ComponentConfiguration:\n  DefaultConfiguration:\n");
-            m.forEach((k, v) -> sb.append("    ").append(k).append(" ")
+            sb.append("\nComponentConfiguration:\n  DefaultConfiguration:\n");
+            m.forEach((k, v) -> sb.append("    ").append(k).append(": ")
                     .append(v).append('\n'));
             return sb.toString();
         }
-        public String genEnv() {
+        public CharSequence genEnv() {
             Map<String, String> m = keyFile.configuration;
-            if (m.isEmpty()) return "";
+            m.put("WORKPATH", "{work:path}");
+            if (m.isEmpty()) return "\n";
             StringBuilder sb = new StringBuilder();
+            sb.append("\n    setenv:\n");
             m.forEach((k, v) -> {
-                if (sb.length() > 0) sb.append(",");
-                sb.append(k).append(": {")
-                        .append(v).append('}');
+                sb.append("        ").append(k).append(": '{configuration:/")
+                        .append(k).append("}'\n");
             });
-            return "setenv: { " + sb + " }";
+            return sb;
         }
         public String addConfig(String k, String v) {
             keyFile.configuration.put(k, v);
@@ -479,9 +480,9 @@ public class TemplateCommand {
         }
         public String genDependencies() {
             Map<String, String> m = keyFile.dependencies;
-            if (m.isEmpty()) return "";
+            if (m.isEmpty()) return "\n";
             StringBuilder sb = new StringBuilder();
-            sb.append("ComponentDependencies:\n");
+            sb.append("\nComponentDependencies:\n");
             m.forEach((k, v) -> {
                 boolean soft = false;
                 if (v.endsWith("-soft")) {

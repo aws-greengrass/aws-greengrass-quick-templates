@@ -18,7 +18,7 @@ _key=value..._ | Sets the value of a configuration variable.
 
 ### To install:
 ```
-curl https://github.com/aws-greengrass/aws-greengrass-quick-templates/raw/main/install.sh|bash
+curl -L https://github.com/aws-greengrass/aws-greengrass-quick-templates/raw/main/install.sh|bash
 ```
 
 ### Caveat Emptor

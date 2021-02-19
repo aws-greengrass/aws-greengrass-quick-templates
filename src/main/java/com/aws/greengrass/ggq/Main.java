@@ -4,7 +4,6 @@
  */
 package com.aws.greengrass.ggq;
 
-import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
@@ -80,6 +79,11 @@ public class Main {
                         case "--dryrun":
                             tc.dryrun = true;
                             break;
+                        case "-l":
+                        case "--list":
+                            DeployedComponent.dump(tc);
+                            didSomethingUseful = true;
+                            break;
                         case "-pw":
                         case "--pw":
                             tc.runCommand("get-debug-password");
@@ -152,7 +156,7 @@ public class Main {
     public static void showHelp() {
         System.out.println("Help is available at " + helpUrl);
         try {
-            Desktop.getDesktop().browse(new URI(helpUrl));
+            java.awt.Desktop.getDesktop().browse(new URI(helpUrl));
         } catch (Throwable t) {
         }
     }
@@ -253,8 +257,19 @@ public class Main {
                         .append(" } }");
             });
             sb.append('}');
-            if (tc.runCommand("deployment", "create", "--update-config", sb
-                    .toString()) != 0) {
+            Deque<String> cmd = new LinkedList<>();
+            cmd.add("deployment");
+            cmd.add("create");
+            cmd.add("--update-config");
+            cmd.add(sb.toString());
+            settings.keySet().forEach(componentName->{
+                cmd.add("--merge");
+                cmd.add(componentName+"="+DeployedComponent.of(componentName, tc).version);
+            });
+            if (tc.runCommand((l,e)->{
+                if(!l.contains("INFO") && !l.contains(".awssdk."))
+                    System.out.println((e ?"? ":"  ")+l);
+            }, cmd) != 0) {
                 System.out.println("config update failed.");
                 System.exit(1);
             }

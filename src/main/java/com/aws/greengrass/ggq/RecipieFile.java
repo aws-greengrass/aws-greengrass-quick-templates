@@ -13,18 +13,22 @@ import java.util.regex.*;
 
 class RecipieFile {
     private String body;
-    final String name;
-    final Semver version;
-    final String description;
-    final String publisher;
-    final String group;
-    final String hashbang;
-    final String filename;
-    final boolean isRecipe;
+    String name;
+    Semver version;
+    String description;
+    String publisher;
+    String group;
+    String hashbang;
+    String filename;
+    boolean isRecipe;
     RecipieFile(String fn, String b, boolean is) {
         isRecipe = is;
         filename = fn;
-        String fnName = TemplateCommand.chopExtension(fn);
+        setBody(b);
+    }
+    public final void setBody(String b) {
+        if(b==null) return;
+        String fnName = TemplateCommand.chopExtension(filename);
         Matcher versionStart = Pattern.compile("-[0-9]").matcher(fnName);
         String p1;
         String p2;

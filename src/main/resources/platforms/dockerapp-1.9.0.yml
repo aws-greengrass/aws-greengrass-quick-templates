@@ -1,0 +1,24 @@
+## Template recipe for Lua platform install
+#set( $name = "dockerapp")
+#set( $version = "1.9.0")
+#set( $description = "The docker runtime and app")
+#set( $publisher = "Amazon")
+#parse("platforms/standard.yml")
+
+lifecycle:
+  bootstrap:
+    skipif: onpath docker # too heavy-handed.  Should check version
+    script:
+        posix:
+            script: |
+                if which apt-get;
+                    then apt-get install -y docker
+                elif which yum;
+                    then yum install epel-release && yum install docker
+                else echo No support for this flavor of linux; exit 1;
+                fi
+                systemctl enable docker
+                systemctl start docker
+            requiresPrivilege: true
+        macos: brew install docker
+        windows: head explodes!

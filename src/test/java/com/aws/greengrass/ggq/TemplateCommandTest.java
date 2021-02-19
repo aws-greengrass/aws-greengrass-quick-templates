@@ -5,7 +5,6 @@
 package com.aws.greengrass.ggq;
 
 //import com.aws.greengrass.cli.CLI;
-import com.aws.greengrass.ggq.Main;
 import java.io.*;
 import java.nio.file.*;
 import org.junit.jupiter.api.*;
@@ -31,7 +30,7 @@ public class TemplateCommandTest {
 
     @Test
     public void test_single_file_lua() {
-        test_single_file("hello.lua", "-- ComponentVersion: 1.1.0\n"
+        test_single_file("helloL.lua", "-- ComponentVersion: 1.1.0\n"
                 + "-- ComponentName: OlaLua\n"
                 + "print '¡Olá lua!'");
     }
@@ -92,6 +91,11 @@ public class TemplateCommandTest {
         Assertions.assertTrue(run("--misspelled",
                 System.getProperty("user.home") + "/.greengrass",
                 "--dryrun", "foo.py") != 0);
+    }
+    @Test
+    public void test_docker() {
+        Assertions.assertEquals(0, run(
+                "--dryrun", "docker:postgres"));
     }
 
     public void test_single_file(String name, String body) {

@@ -1,18 +1,20 @@
 # ggq — GreenGrass Quick development tool
 
 ## TL;DR
-<pre><b>ggq</b> [--dryrun | -dr] [-g <i>group</i>] [-gtd <i>tdir</i>] [-pw] [-r <i>ggdir</i>] [-rm <i>comp</i>] [--upload | -u] [--watch | -w] key=value... <i>files...</i></pre>
+<pre><b>ggq</b> [--dryrun | -dr] [-g <i>group</i>] [-gtd <i>tdir</i>] [--list | -l] [-pw] [-r <i>ggdir</i>] [-rm <i>comp</i>] [--upload | -u] [--verbose | -v] [--watch | -w] key=value... <i>files...</i></pre>
 
 Option&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp; | Description
 ------ | -----
-`-dr` &boxv; `--dryrun` | Do not deploy the constructed component or upload it to a region
+`--dryrun` | Do not deploy the constructed component or upload it to a region
 `-g` _group_| The group parameter for this deployment
 `-gtd` _tdir_| The directory into which the generated templates (recipes & assets) are placed
 `-pw` | print the userid and password necessary to use the local debug console.
+`--list` | list the components currently installed in Greengrass
 `-r` _ggdir_| The directory in which greengrass is installed
 `-rm` _comp_| Remove the named component.  Necessary if you've been testing locally, but now want to try deploying from the cloud.
-`-u` &boxv; `--upload` | Causes the constructed components to be uploaded to the current region, instead of being deployed locally. (see below)
-`-w` &boxv; `--watch` | Watches the log files and prints them to stdout in a dev-friendly format
+`--upload` | Causes the constructed components to be uploaded to the current region, instead of being deployed locally. (see below)
+`--verbose` | Be a little more verbose when describing what is going on
+`--watch` | Watches the log files and prints them to stdout in a dev-friendly format
 _files..._ | A list of files to be bundled into a component.  All of the files become the artifacts of the component.  The first file is used to decide what template to use to construct the main recipe for the component, based mostly on the file's extension.  For example, a `.py` file will construct a recipe that executes the first file as a python program.  If no template can be found from the files extension, then if the first file is executable (as an `a.out` would be) it is executed directly; if it's first two bytes are `#!`, then it is executed as a shell script.
 _key=value..._ | Sets the value of a configuration variable.
 

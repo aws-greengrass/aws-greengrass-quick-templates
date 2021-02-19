@@ -35,7 +35,7 @@ public class TemplateCommand {
     private final ArrayList<String> params = new ArrayList<>();
     private Path localTemplateDir;
     private Path zippedArtifacts;
-    private RecipieFile keyFile,
+    private RecipieFile keyFile, thisFile,
             generatedRecipe;
     private String artifactURL;
     private final List<String> artifacts = new ArrayList<>();
@@ -55,32 +55,39 @@ public class TemplateCommand {
     }
     private int scanFiles() {
         for (String fn : files)
-            if (fn.indexOf('=') > 0)
-                // Assume that any argument with an = sign is a parameter.
-                params.add(fn);
-            else if (fn.endsWith(".jar")) {
+            if (fn.endsWith(".jar")) {
                 if (keyFile == null)
                     harvestJar(fn);
                 artifacts.add(fn);
             } else if (isRecipe(fn))
                 addRecipe(fn, capture(Paths.get(fn)));
             else
-                addArtifact(fn, true);
+                addArtifact(fn);
         return 0;
     }
     static boolean isEmpty(String s) {
         return s == null || s.isEmpty();
     }
-    private void addArtifact(String fn, boolean xinfo) {
-        if (keyFile == null && xinfo) {
-            String body = null;
-            try {
-                body = ReadFirst(Paths.get(fn).toUri().toURL());
-            } catch (MalformedURLException ex) {
-                err("cli.tpl.erd", ex);
+    private void addArtifact(String fn) {
+        if (keyFile == null) {
+            int colon = fn.indexOf(':');
+            if (colon > 0) {
+                // the parameter is something like docker:postgres
+                // we turn it into postgres.docker, to pick up the docker template,
+                // but there is no file, it's just a template with a parameter.
+                keyFile = new RecipieFile(fn.substring(colon + 1) + "." + fn
+                        .substring(0, colon), "", false);
+                return;  // just a parameterized template, no file.
+            } else {
+                String body = null;
+                try {
+                    body = ReadFirst(Paths.get(fn).toUri().toURL());
+                } catch (MalformedURLException ex) {
+                    err("cli.tpl.erd", ex);
+                }
+                if (body != null)
+                    keyFile = new RecipieFile(fn, body, false);
             }
-            if (body != null)
-                keyFile = new RecipieFile(fn, body, false);
         }
         artifacts.add(fn);
     }
@@ -166,7 +173,9 @@ public class TemplateCommand {
     @SuppressWarnings("UseSpecificCatch")
     private void generateTemplate() {
         if (!keyFile.isRecipe) {
+            // Generate the root recipe (eg in ggq hello.lua, it will be lua.yml)
             keyPath = Paths.get(keyFile.filename);
+            thisFile = keyFile;
             final String templateName =
                     keyFile.hashbang != null ? "hashbang.yml"
                             : Files.isExecutable(keyPath) ? "executable.yml"
@@ -182,6 +191,19 @@ public class TemplateCommand {
             } catch (Throwable t) {
                 err("cli.tpl.nft", t);
             }
+            // Generate the recipies that need to be generated to support the root recipe
+            String recipe;
+            while ((recipe = toBeGenerated.poll()) != null)
+                try {
+                    thisFile = addRecipe(recipe, null);
+                    StringWriter out = new StringWriter();
+                    getVelocityEngine()
+                            .getTemplate("platforms/" + recipe, "UTF-8")
+                            .merge(context, out);
+                    thisFile.setBody(out.toString());
+                } catch (Throwable ex) {
+                    err("cli.tpl.erd", ex);
+                }
         } else
             System.out.println("[ using provided recipe file ]"); //            ComponentRecipe r = getParsedRecipe();
     }
@@ -194,11 +216,11 @@ public class TemplateCommand {
             velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER,
                     "file,classpath");
             velocityEngine.setProperty("classpath.resource.loader.class",
-                            ClasspathResourceLoader.class.getName());
-            velocityEngine.setProperty(RuntimeConstants.FILE_RESOURCE_LOADER_PATH,
-                    localTemplateDir.toString());
+                    ClasspathResourceLoader.class.getName());
+            velocityEngine
+                    .setProperty(RuntimeConstants.FILE_RESOURCE_LOADER_PATH,
+                            localTemplateDir.toString());
 //            velocityEngine.setProperty(RuntimeConstants.EVENTHANDLER_INCLUDE, IncludeRelativePath.class.getName());
-
             velocityEngine.init();
             context.put("name", keyFile.name);
             context.put("version", keyFile.version);
@@ -398,7 +420,7 @@ public class TemplateCommand {
     }
     private RecipieFile addRecipe(String name, String body) {
         RecipieFile ret = null;
-        if (name != null && body != null) {
+        if (name != null) {
             int sl = name.lastIndexOf('/');
             if (sl >= 0)
                 name = name.substring(sl + 1);
@@ -439,23 +461,21 @@ public class TemplateCommand {
         } catch (Throwable t) {
         }
     }
+    private final Queue<String> toBeGenerated = new LinkedList<>();
+    private final Set<String> platform = new HashSet<>();
     @SuppressWarnings("UseSpecificCatch")
     public class opHandlers {
         public String platform(String recipe) {
-            try {
-                StringWriter out = new StringWriter();
-                getVelocityEngine()
-                        .getTemplate("platforms/" + recipe, "UTF-8")
-                        .merge(context, out);
-                addRecipe(recipe, out.toString());
-            } catch (Throwable ex) {
-                err("cli.tpl.erd", ex);
+            if (!platform.contains(recipe)) {
+                toBeGenerated.add(recipe);
+                platform.add(recipe);
             }
             return "";
         }
         public String genConfig() {
-            Map<String, String> m = keyFile.configuration;
-            if (m.isEmpty()) return "\n";
+            Map<String, String> m;
+            if (thisFile == null || (m = thisFile.configuration).isEmpty())
+                return "\n";
             StringBuilder sb = new StringBuilder();
             sb.append("\nComponentConfiguration:\n  DefaultConfiguration:\n");
             m.forEach((k, v) -> sb.append("    ").append(k).append(": ")
@@ -463,9 +483,10 @@ public class TemplateCommand {
             return sb.toString();
         }
         public CharSequence genEnv() {
-            Map<String, String> m = keyFile.configuration;
-            m.put("WORKPATH", "{work:path}");
-            if (m.isEmpty()) return "\n";
+            Map<String, String> m;
+//            m.put("WORKPATH", "{work:path}");
+            if (thisFile == null || (m = thisFile.configuration).isEmpty())
+                return "\n";
             StringBuilder sb = new StringBuilder();
             sb.append("\n    setenv:\n");
             m.forEach((k, v) -> {
@@ -475,12 +496,13 @@ public class TemplateCommand {
             return sb;
         }
         public String addConfig(String k, String v) {
-            keyFile.configuration.put(k, v);
+            (thisFile != null ? thisFile : keyFile).configuration.put(k, v);
             return "";
         }
         public String genDependencies() {
-            Map<String, String> m = keyFile.dependencies;
-            if (m.isEmpty()) return "\n";
+            Map<String, String> m;
+            if (thisFile == null || (m = thisFile.dependencies).isEmpty())
+                return "\n";
             StringBuilder sb = new StringBuilder();
             sb.append("\nComponentDependencies:\n");
             m.forEach((k, v) -> {
@@ -496,7 +518,8 @@ public class TemplateCommand {
             return sb.toString();
         }
         public String addDependency(String name, String version) {
-            keyFile.dependencies.put(name, version);
+            (thisFile != null ? thisFile : keyFile).dependencies
+                    .put(name, version);
             return "";
         }
     }
@@ -533,6 +556,8 @@ public class TemplateCommand {
             if (rootPath == null)
                 rootPath = isDir("/usr/local/greengrass");
             if (rootPath == null)
+                rootPath = isDir("/usr/local/opt/greengrass");
+            if (rootPath == null)
                 rootPath = isDir("/opt/greengrass");
             if (rootPath == null)
                 rootPath = "$GGC_ROOT_PATH";
@@ -558,33 +583,49 @@ public class TemplateCommand {
         return ggCli;
     }
     public int runCommand(String... command) {
+        return runCommand(null, command);
+    }
+    public int runCommand(LineReceiver lineReceiver, String... command) {
         LinkedList<String> ll = new LinkedList<>();
         for (String s : command) ll.add(s);
-        return runCommand(ll);
+        return runCommand(lineReceiver, ll);
     }
     public int runCommand(Deque<String> command) {
+        return runCommand(null, command);
+    }
+    public int runCommand(LineReceiver lineReceiver, Deque<String> command) {
         command.addFirst(getGGCli());
         command.addFirst("sudo");
         String[] nc = (String[]) command.toArray(new String[command.size()]);
-        System.out.append(dryrun ? "Dry Run:" : "Executing:");
-        for (String s : nc)
-            System.out.append(' ').append(s);
-        System.out.println();
+        if (verbose) {
+            System.out.append(dryrun ? "Dry Run:" : "Executing:");
+            for (String s : nc)
+                System.out.append(' ').append(s);
+            System.out.println();
+        }
         if (dryrun) return 0;
         try {
             ProcessBuilder pb = new ProcessBuilder(nc);
             Map<String, String> env = pb.environment();
             env.putIfAbsent("LOGNAME", "ggc");
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            if (lineReceiver == null) lineReceiver = defaultLineReceiver;
             Process p = pb.start();
-            int ret = p.waitFor();
-            return ret;
+            Thread stdout = new CopyThread(p.getInputStream(), lineReceiver, false);
+            Thread stderr = new CopyThread(p.getErrorStream(), lineReceiver, true);
+            stdout.start();
+            stderr.start();
+            stdout.join();
+            stderr.join();
+            return p.waitFor();
         } catch (Throwable ex) {
             ex.printStackTrace(System.out);
             return -1;
         }
     }
+    private static final LineReceiver defaultLineReceiver = (l, e) -> {
+        if (!l.contains("INFO") && !l.contains(".awssdk."))
+            System.out.println((e ? "? " : "  ") + l);
+    };
     private static String isDir(String d) {
         return d != null && new File(d).isDirectory() ? d : null;
     }

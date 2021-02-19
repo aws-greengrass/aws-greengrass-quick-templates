@@ -24,7 +24,7 @@ public class Watcher {
         try {
             return FileSystems.getDefault().newWatchService();
         } catch (IOException ex) {
-            args.err("Watch failure: ", ex);
+            args.err("cli.wat.err", ex);
             return null;
         }
     }
@@ -52,7 +52,7 @@ public class Watcher {
             } catch (InterruptedException ex) {
             }
         } catch (IOException ex) {
-            args.err("Watch start failure: ", ex);
+            args.err("cli.wat.err", ex);
         }
         return 0;
     }

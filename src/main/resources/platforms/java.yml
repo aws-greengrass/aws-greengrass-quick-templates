@@ -6,7 +6,7 @@ componentVersion: $javaVersion.0.0
 componentDescription: The java platform
 componentPublisher: Amazon
 
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
   install:

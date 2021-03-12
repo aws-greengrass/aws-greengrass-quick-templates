@@ -1,14 +1,9 @@
 ## Template recipe for executable files
----
-recipeFormatVersion: 2020-01-25
-componentName: $name
-componentVersion: $version
-componentDescription: $description
-componentPublisher: $publisher
 
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
-  run:
-    posix: ln -f -s -t . {artifacts:path}/*; exec $file
-    windows: whatever
+    install:
+        posix: ln -f -s -t . {artifacts:decompressedPath}/$zbase/*; chmod +x $file
+    run:
+        posix: exec $file

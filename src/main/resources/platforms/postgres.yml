@@ -12,7 +12,7 @@ componentConfiguration:
   defaultConfiguration:
     password: somethinglessstupid
 
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
   install:

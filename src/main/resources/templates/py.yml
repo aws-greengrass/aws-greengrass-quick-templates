@@ -1,18 +1,9 @@
 ## Template recipe for Python projects
----
-recipeFormatVersion: 2020-01-25
-componentName: $name
-componentVersion: $version
-componentDescription: $description
-componentPublisher: $publisher
 
-#componentDependencies: TODO
-#  variant.Python3:
-#    VersionRequirement: ^3.5
-
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
-  run:
-    posix: ln -f -s -t . {artifacts:path}/*; python3 $file
-    windows: whatever
+    install:
+        posix: ln -f -s -t . {artifacts:decompressedPath}/$zbase/*
+    run:
+        posix: python3 $file

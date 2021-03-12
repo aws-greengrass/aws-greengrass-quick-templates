@@ -1,12 +1,9 @@
 ## Template recipe for Lua platform install
----
-recipeFormatVersion: 2020-01-25
-componentName: lua
-componentVersion: 5.3.0
-componentDescription: The lua platform
-componentPublisher: Amazon
-
-#include("platforms/standard.yml")
+#set( $name = "lua" )
+#set( $version = "5.3.0" )
+#set( $description = "The lua platform.")
+#set( $publisher = "Amazon" )
+#parse("platforms/standard.yml")
 
 lifecycle:
   install:

@@ -1,14 +1,9 @@
 ## Template recipe for files that start with #!
----
-recipeFormatVersion: 2020-01-25
-componentName: $name
-componentVersion: $version
-componentDescription: $description
-componentPublisher: $publisher
 
-#include("platforms/standard.yml")
+#parse("platforms/standard.yml")
 
 lifecycle:
-  run:
-    posix: ln -f -s -t . {artifacts:path}/*; $hashbang $file
-    windows: whatever
+    install:
+        posix: ln -f -s -t . {artifacts:decompressedPath}/$zbase/*
+    run:
+        posix: $hashbang $file

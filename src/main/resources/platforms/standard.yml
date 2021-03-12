@@ -1,18 +1,11 @@
-## A Manifest section with all the usual Platforms
-manifests:
-  - platform:
-      os: windows
-    name: "Windows"
-    selections: [windows]
-    artifacts:
-  - platform:
-      os: darwin
-    name: "MacOS"
-    selections: [macos,posix]
-    artifacts:
-# differentiating versions of linux is currently incomplete
-  - platform:
-      os: all
-    name: "Posix"
-    selections: [posix]
-    artifacts:
+## Standard header
+---
+recipeFormatVersion: 2020-01-25
+componentName: $name
+componentVersion: $version
+componentDescription: $description
+componentPublisher: $publisher
+# $ctx.genConfig()
+# $ctx.genDependencies()
+
+#parse("platforms/manifests.yml")

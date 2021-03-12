@@ -1,0 +1,17 @@
+## Recipe for components from dockerhub
+# $ctx.platform("dockerapp-1.9.0.yml")
+# $ctx.addDependency("dockerapp", "^1.9.0")
+#parse("platforms/standard.yml")
+
+lifecycle:
+  bootstrap:
+    script: docker pull $name
+    requiresPrivilege: true
+  startup: 
+      # eventually replace -rm with  --restart always
+    script: docker run  -v {work:path}:{work:path} -w {work:path} -rm -a stderr -a stdout $name
+    requiresPrivilege: true
+  shutdown:
+    script: docker stop $name
+    requiresPrivilege: true
+  

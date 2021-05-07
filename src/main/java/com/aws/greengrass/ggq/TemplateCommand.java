@@ -21,12 +21,12 @@ import org.apache.velocity.runtime.*;
 import org.apache.velocity.runtime.resource.loader.*;
 
 public class TemplateCommand {
-    // see https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
     boolean dryrun;
     CloudOps cloud;
     String generatedTemplateDirectory = "~/gg2Templates";
     String group = null;
-    String[] files;
+    List<String> files;
+    List<Assignment> assignments;
     private Path recipeDir;
     private Path artifactDir;
     boolean verbose = false;
@@ -44,17 +44,18 @@ public class TemplateCommand {
     public void run() {
         if (cloud != null) cloud.setBucket(bucket);
         genTemplateDir = Paths.get(deTilde(generatedTemplateDirectory));
-        if (files == null || files.length == 0)
+        if (files.isEmpty())
             err("cli.tpl.files");
         scanFiles();
         if (keyFile == null)
             err("cli.tpl.files");
+        assignments.forEach(a -> addConfig(a.key, a.value));
         build();
         if (cloud != null) doUpload();
         if (!dryrun) deploy();
     }
     private int scanFiles() {
-        for (String fn : files)
+        files.forEach(fn -> {
             if (fn.endsWith(".jar")) {
                 if (keyFile == null)
                     harvestJar(fn);
@@ -63,6 +64,7 @@ public class TemplateCommand {
                 addRecipe(fn, capture(Paths.get(fn)));
             else
                 addArtifact(fn);
+        });
         return 0;
     }
     static boolean isEmpty(String s) {
@@ -195,15 +197,15 @@ public class TemplateCommand {
             String recipe;
             while ((recipe = toBeGenerated.poll()) != null)
                 try {
-                    thisFile = addRecipe(recipe, null);
-                    StringWriter out = new StringWriter();
-                    getVelocityEngine()
-                            .getTemplate("platforms/" + recipe, "UTF-8")
-                            .merge(context, out);
-                    thisFile.setBody(out.toString());
-                } catch (Throwable ex) {
-                    err("cli.tpl.erd", ex);
-                }
+                thisFile = addRecipe(recipe, null);
+                StringWriter out = new StringWriter();
+                getVelocityEngine()
+                        .getTemplate("platforms/" + recipe, "UTF-8")
+                        .merge(context, out);
+                thisFile.setBody(out.toString());
+            } catch (Throwable ex) {
+                err("cli.tpl.erd", ex);
+            }
         } else
             System.out.println("[ using provided recipe file ]"); //            ComponentRecipe r = getParsedRecipe();
     }
@@ -240,8 +242,7 @@ public class TemplateCommand {
                         .append(DateTimeFormatter.ISO_INSTANT.format(Instant.
                                 now()))
                         .append(" from");
-                for (String f : files)
-                    sb.append(' ').append(f);
+                files.forEach(f -> sb.append(' ').append(f));
                 description = sb.toString();
             }
             context.put("description", description);
@@ -461,6 +462,10 @@ public class TemplateCommand {
         } catch (Throwable t) {
         }
     }
+    public void addConfig(String k, String v) {
+        Map<String,String> config = (thisFile != null ? thisFile : keyFile).configuration;
+        config.putIfAbsent(k, v);
+    }
     private final Queue<String> toBeGenerated = new LinkedList<>();
     private final Set<String> platform = new HashSet<>();
     @SuppressWarnings("UseSpecificCatch")
@@ -478,8 +483,12 @@ public class TemplateCommand {
                 return "\n";
             StringBuilder sb = new StringBuilder();
             sb.append("\nComponentConfiguration:\n  DefaultConfiguration:\n");
-            m.forEach((k, v) -> sb.append("    ").append(k).append(": ")
-                    .append(v).append('\n'));
+            m.forEach((k, v) -> {
+                if (k.endsWith("-env"))
+                    k = k.substring(0, k.length() - 4);
+                sb.append("    ").append(k).append(": ")
+                        .append(v).append('\n');
+            });
             return sb.toString();
         }
         public CharSequence genEnv() {
@@ -488,15 +497,18 @@ public class TemplateCommand {
             if (thisFile == null || (m = thisFile.configuration).isEmpty())
                 return "\n";
             StringBuilder sb = new StringBuilder();
-            sb.append("\n    setenv:\n");
             m.forEach((k, v) -> {
-                sb.append("        ").append(k).append(": '{configuration:/")
-                        .append(k).append("}'\n");
+                if (k.endsWith("-env")) {
+                    k = k.substring(0, k.length() - 4);
+                    sb.append("        ").append(k)
+                            .append(": '{configuration:/")
+                            .append(k).append("}'\n");
+                }
             });
-            return sb;
+            return sb.length()==0 ? "\n" : "\n    setenv:\n" + sb;
         }
         public String addConfig(String k, String v) {
-            (thisFile != null ? thisFile : keyFile).configuration.put(k, v);
+            TemplateCommand.this.addConfig(k, v);
             return "";
         }
         public String genDependencies() {

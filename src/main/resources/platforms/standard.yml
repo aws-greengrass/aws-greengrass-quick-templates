@@ -8,4 +8,20 @@ componentPublisher: $publisher
 # $ctx.genConfig()
 # $ctx.genDependencies()
 
-#parse("platforms/manifests.yml")
+manifests:
+  - platform:
+        os: windows
+    name: "Windows"
+    selections: [ "windows" ]
+    artifacts: inject
+  - platform:
+        os: darwin
+    name: "MacOS"
+    selections: [ "macos", "posix" ]
+    artifacts: inject
+# differentiating versions of linux is currently incomplete
+  - platform:
+        os: all
+    name: "Posix"
+    selections: [ "posix" ]
+    artifacts: inject

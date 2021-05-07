@@ -23,7 +23,7 @@ public class DeployedComponent {
     public static void forEach(TemplateCommand tc, Consumer<DeployedComponent> func) {
         map(tc).values().forEach(func);
     }
-    private static int maxWidth;
+    private static int maxWidth = 2;
     private static synchronized Map<String, DeployedComponent> map(TemplateCommand tc) {
         Map<String, DeployedComponent> m = svcMap;
         if (m == null) {
@@ -31,12 +31,12 @@ public class DeployedComponent {
             tc.runCommand((line, isError) -> {
                 int colon = line.indexOf(':');
                 if (colon > 4) {
-                    String key = line.substring(0, colon);
+                    String key = line.substring(0, colon).trim();
                     String value = line.substring(colon + 1).trim();
                     switch (key) {
                         case "Component Name":
                             current = new DeployedComponent(value);
-                            int len = value.length();
+                            int len = current.name.length();
                             if (len > maxWidth) maxWidth = len;
                             svcMap.put(value.toLowerCase(), current);
                             break;
@@ -65,8 +65,9 @@ public class DeployedComponent {
     }
     private static DeployedComponent current = null;
     public static void dump(TemplateCommand tc) {
+        map(tc); // trigger maxWidth calc
         String fmt = "%-" + maxWidth // Yes, I am this anal
-                + "s %-10s %-10s\n";
+                + "s %-10s %s\n";
         forEach(tc, ds -> System.out.printf(fmt,
                 ds.name, ds.version, ds.state));
     }

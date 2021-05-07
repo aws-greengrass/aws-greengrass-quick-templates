@@ -29,7 +29,7 @@ public class Main {
     int exec() {
         Dest dest = Dest.NONE;
         ArrayList<String> files = new ArrayList<>();
-        ArrayList<String> assignments = new ArrayList<>();
+        ArrayList<Assignment> assignments = new ArrayList<>();
         boolean doWatch = false;
         for (String s : args)
             switch (dest) {
@@ -119,19 +119,18 @@ public class Main {
                                 System.out.println("Illegal argument: " + s);
                                 return 1;
                             }
-                            (s.indexOf('=') > 0 ? assignments : files).add(s);
+                            if (s.indexOf('=') > 0)
+                                assignments.add(new Assignment(s));
+                            else files.add(s);
                             break;
                     }
                     break;
             }
-        int fsz = files.size();
-        int asz = assignments.size();
-        if (asz > 0)
-            processAssignments(assignments.toArray(new String[asz]));
         if (doWatch)
             return new Watcher(tc).watch();
-        if (fsz > 0) {
-            tc.files = files.toArray(new String[fsz]);
+        if (!files.isEmpty()) {
+            tc.files = files;
+            tc.assignments = assignments;
             try {
                 tc.run();
                 return 0;
@@ -145,7 +144,9 @@ public class Main {
                 if (tc.verbose) t.printStackTrace(System.out);
                 return 1;
             }
-        } else if (!didSomethingUseful) {
+        } else if (!assignments.isEmpty())
+            processAssignments(assignments);
+        else if (!didSomethingUseful) {
             System.err.println("Usage: ggq files...");
             return 256;
         }
@@ -174,7 +175,8 @@ public class Main {
         return prefs.getProperty(key, dflt);
     }
     public static synchronized void putPreference(String key, String value) {
-        if (value==null || value.equals(getPreference(key, "3495723kjdwfg;@$"))) return;
+        if (value == null || value
+                .equals(getPreference(key, "3495723kjdwfg;@$"))) return;
         prefs.put(key, value);
         try (Writer out = Files
                 .newBufferedWriter(propFile, StandardOpenOption.CREATE)) {
@@ -194,59 +196,19 @@ public class Main {
 //        putPreference(key, String.join(csep, items));
 //        return items;
 //    }
-    private void processAssignments(String... assignments) {
-        if (assignments != null && assignments.length > 0) {
+    private void processAssignments(List<Assignment> assignments) {
+        if (assignments != null && assignments.size() > 0) {
             didSomethingUseful = true;
             HashMap<String, StringBuilder> settings = new HashMap<>();
-            for (String s : assignments) {
-                int sp = s.indexOf('=');
-                if (sp < 0) {
-                    System.out.println("Illegal assignment operator: " + s);
-                    System.exit(0);
-                }
-                String key = s.substring(0, sp);
-                String value = s.substring(sp + 1);
-                int colon = key.indexOf(':');
-                if (colon < 0) {
-                    switch (key) { // a few short synonyms
-                        case "ll":
-                            key = "nucleus:logging.level";
-                            value = value.toUpperCase();
-                            if (value.startsWith("D")) value = "DEBUG";
-                            else if (value.startsWith("I")) value = "INFO";
-                            else if (value.startsWith("W")) value = "WARN";
-                            else if (value.startsWith("E")) value = "ERROR";
-                            break;
-                        case "fmt":
-                            key = "nucleus:logging.format";
-                            value = value.toLowerCase().startsWith("j") ? "JSON" : "TEXT";
-                            break;
-                        case "od": key = "nucleus:logging.outputDirectory";
-                            break;
-                        case "jvm": key = "nucleus:jvmOptions";
-                            break;
-                        default: System.out.println(key
-                                    + ": Configuration parameter names must be in the format componentname:keyname");
-                            System.exit(1);
-                    }
-                    colon = key.indexOf(':');
-                }
-                String component = key.substring(0, colon);
-                switch (component) {
-                    case "nucleus": component = "aws.greengrass.Nucleus";
-                        break;
-                    case "cli": component = "aws.greengrass.Cli";
-                        break;
-                    case "console":
-                        component = "aws.greengrass.LocalDebugConsole";
-                        break;
-                }
-                String subKey = key.substring(colon + 1);
-                StringBuilder comps = settings
-                        .computeIfAbsent(component, n -> new StringBuilder());
-                if (comps.length() > 0) comps.append(",\n\t");
-                addKV(comps, subKey, value);
-            }
+            assignments.forEach(s -> {
+                if (s.component != null) {
+                    StringBuilder comps = settings
+                            .computeIfAbsent(s.component, n -> new StringBuilder());
+                    if (comps.length() > 0) comps.append(",\n\t");
+                    addKV(comps, s.key, s.value);
+                } else
+                    throw new IllegalArgumentException(s.key + ": not associated with a component");
+            });
             StringBuilder sb = new StringBuilder();
             sb.append('{');
             settings.forEach((k, v) -> {
@@ -262,13 +224,14 @@ public class Main {
             cmd.add("create");
             cmd.add("--update-config");
             cmd.add(sb.toString());
-            settings.keySet().forEach(componentName->{
+            settings.keySet().forEach(componentName -> {
                 cmd.add("--merge");
-                cmd.add(componentName+"="+DeployedComponent.of(componentName, tc).version);
+                cmd.add(componentName + "=" + DeployedComponent
+                        .of(componentName, tc).version);
             });
-            if (tc.runCommand((l,e)->{
-                if(!l.contains("INFO") && !l.contains(".awssdk."))
-                    System.out.println((e ?"? ":"  ")+l);
+            if (tc.runCommand((l, e) -> {
+                if (!l.contains("INFO") && !l.contains(".awssdk."))
+                    System.out.println((e ? "? " : "  ") + l);
             }, cmd) != 0) {
                 System.out.println("config update failed.");
                 System.exit(1);

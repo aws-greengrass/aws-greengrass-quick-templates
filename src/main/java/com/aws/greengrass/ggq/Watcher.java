@@ -4,7 +4,6 @@
  */
 package com.aws.greengrass.ggq;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import java.io.*;
 import java.lang.reflect.*;
@@ -105,10 +104,10 @@ public class Watcher {
             return sb.toString();
         } else {
             String ret = String.valueOf(o);
-            if(ret.startsWith("[\"")) {
+            if (ret.startsWith("[\"")) {
                 ret = ret.substring(2);
-                if(ret.endsWith("\"]"))
-                    ret = ret.substring(0,ret.length()-2);
+                if (ret.endsWith("\"]"))
+                    ret = ret.substring(0, ret.length() - 2);
             }
             return ret;
         }
@@ -133,8 +132,7 @@ public class Watcher {
 //                    .println("_____________________" + from.name + "_______________________");
 //            last = from;
 //        }
-        if (line.startsWith("{"))
-            try {
+        if (line.startsWith("{")) try {
             Map logEntry = json.readValue(line, Map.class);
             String eventType = gets(logEntry, "eventType");
             String level = gets(logEntry, "level");
@@ -175,25 +173,26 @@ public class Watcher {
                 logEntry.forEach((k, v) -> System.out
                         .println("\t" + k + ":\t" + v));
             }
-            Object cause = geto(logEntry,"cause");
-            while(cause instanceof Map) {
+            Object cause = geto(logEntry, "cause");
+            while (cause instanceof Map) {
                 Map mo = (Map) cause;
                 Object trace = mo.get("stackTrace");
-                String emsg = gets(mo,"message");
-                if(emsg!=null) System.out.printf("%-10s***%s\n", serviceName, emsg);
-                if(trace!=null && trace.getClass().isArray()) {
+                String emsg = gets(mo, "message");
+                if (emsg != null) System.out
+                            .printf("%-10s***%s\n", serviceName, emsg);
+                if (trace != null && trace.getClass().isArray()) {
                     int len = Array.getLength(trace);
-                    for(int i = 0; i<len; i++) {
+                    for (int i = 0; i < len; i++) {
                         Object tl = Array.get(trace, i);
-                        System.out.println("\t\t\t"+gets(tl,"methodName") +
-                                " at "+gets(tl,"fileName") +
-                                ":" + gets(tl,"lineNumber"));
+                        System.out.println("\t\t\t" + gets(tl, "methodName")
+                                + " at " + gets(tl, "fileName")
+                                + ":" + gets(tl, "lineNumber"));
                     }
                 }
                 cause = (Map) mo.get("cause");
             }
-        } catch (JsonProcessingException ex) {
-            System.out.println(from.path+": "+ex+"\n\t"+line);
+        } catch (Throwable ex) {
+            System.out.println(from.path + ": " + ex + "\n\t" + line);
 //                System.exit(0);
         } else if (logPattern.reset(line).matches()) {
             if (!notifiedJson) {
@@ -220,7 +219,7 @@ public class Watcher {
             if (!isClosed()) {
                 try {
                     in.close();
-                } catch(Throwable t) { 
+                } catch (Throwable t) {
                 }
                 in = EOF;
             }

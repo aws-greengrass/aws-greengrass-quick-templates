@@ -31,7 +31,7 @@ public class DeployedComponent {
             tc.runCommand((line, isError) -> {
                 int colon = line.indexOf(':');
                 if (colon > 4) {
-                    String key = line.substring(0, colon).trim();
+                    String key = line.substring(0, colon).trim(); // fix Issue #2
                     String value = line.substring(colon + 1).trim();
                     switch (key) {
                         case "Component Name":

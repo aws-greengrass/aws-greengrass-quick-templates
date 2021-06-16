@@ -54,5 +54,7 @@ Any value defined here will override the pom.xml file value but is only applicab
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.keepGettersAndSettersTogether>true</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.keepGettersAndSettersTogether>
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterDotInChainedMethodCalls>false</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterDotInChainedMethodCalls>
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterAssignOps>true</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapAfterAssignOps>
+        <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapWhileStatement>WRAP_IF_LONG</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapWhileStatement>
+        <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapFor>WRAP_IF_LONG</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.wrapFor>
     </properties>
 </project-shared-configuration>

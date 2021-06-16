@@ -95,7 +95,7 @@ public class TemplateCommand {
     }
     private String ReadFirst(URL u) {
         if (u != null)
-            try (Reader in = new InputStreamReader(new BufferedInputStream(u
+            try ( Reader in = new InputStreamReader(new BufferedInputStream(u
                 .openStream()))) {
             StringBuilder sb = new StringBuilder();
             int c;
@@ -266,7 +266,7 @@ public class TemplateCommand {
         return velocityEngine;
     }
     private void harvestJar(String pn) {
-        try (JarFile jar = new JarFile(new File(pn))) {
+        try ( JarFile jar = new JarFile(new File(pn))) {
             Manifest m = jar.getManifest();
             if (m != null) {
                 Attributes a = m.getMainAttributes();
@@ -277,16 +277,24 @@ public class TemplateCommand {
                 s = a.getValue("ComponentName");
                 if (!isEmpty(s))
                     body.append("ComponentName: ").append(s).append("\n");
+                s = a.getValue("Build-Jdk-Spec");
+                if (!isEmpty(s)) {
+                    Matcher jv = Pattern.compile("([0-9]+).*").matcher(s);
+                    if (jv.matches())
+                        javaVersion = jv.group(1);
+                }
                 s = a.getValue("Build-Jdk");
-                Matcher jv = Pattern.compile("([0-9]+)\\..*").matcher(s);
-                if (jv.matches())
-                    javaVersion = jv.group(1);
+                if (!isEmpty(s)) {
+                    Matcher jv = Pattern.compile("([0-9]+)\\..*").matcher(s);
+                    if (jv.matches())
+                        javaVersion = jv.group(1);
+                }
                 keyFile = new RecipieFile(pn, body.toString(), false);
             }
             jar.stream().forEach(e -> {
                 String name = e.getName();
                 if (name.startsWith("RECIPES/") && isRecipe(name))
-                    try (Reader in = new InputStreamReader(jar
+                    try ( Reader in = new InputStreamReader(jar
                         .getInputStream(e))) {
                     addRecipe(e.getName(), capture(in));
                 } catch (IOException ioe) {
@@ -337,13 +345,13 @@ public class TemplateCommand {
 //                p.entrySet().forEach(e->System.out.println("\t"+e.getKey()+":\t"+e.getValue()));
 //            }
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            try (OutputStream out =
+            try ( OutputStream out =
                     new DigestOutputStream(
                             Files.newOutputStream(zip,
                                     StandardOpenOption.CREATE,
                                     StandardOpenOption.WRITE,
                                     StandardOpenOption.TRUNCATE_EXISTING),
-                            md); ZipOutputStream zf = new ZipOutputStream(out)) {
+                            md);  ZipOutputStream zf = new ZipOutputStream(out)) {
                 artifacts.forEach(name -> {
                     Path src = Paths.get(name);
                     ZipEntry ze = new ZipEntry(src.getFileName().toString());
@@ -400,8 +408,8 @@ public class TemplateCommand {
                         .append(hex[b & 0xF]);
         return sb.toString();
     }
-    private static final Pattern RECIPEPATTERN = Pattern.
-            compile(".*\\.(yaml|yml|ggr)$");
+    private static final Pattern RECIPEPATTERN =
+            Pattern.compile(".*\\.(yaml|yml|ggr)$");
     private static boolean isRecipe(String name) {
         return RECIPEPATTERN.matcher(name).matches();
     }
@@ -433,7 +441,7 @@ public class TemplateCommand {
         return ret;
     }
     private String capture(Path in) {
-        try (Reader is = Files.newBufferedReader(in)) {
+        try ( Reader is = Files.newBufferedReader(in)) {
             return capture(is);
         } catch (IOException ex) {
             err("cli.tpl.erd", ex);
@@ -463,7 +471,7 @@ public class TemplateCommand {
         }
     }
     public void addConfig(String k, String v) {
-        Map<String,String> config = (thisFile != null ? thisFile : keyFile).configuration;
+        Map<String, String> config = (thisFile != null ? thisFile : keyFile).configuration;
         config.putIfAbsent(k, v);
     }
     private final Queue<String> toBeGenerated = new LinkedList<>();
@@ -505,7 +513,7 @@ public class TemplateCommand {
                             .append(k).append("}'\n");
                 }
             });
-            return sb.length()==0 ? "\n" : "\n    setenv:\n" + sb;
+            return sb.length() == 0 ? "\n" : "\n    setenv:\n" + sb;
         }
         public String addConfig(String k, String v) {
             TemplateCommand.this.addConfig(k, v);

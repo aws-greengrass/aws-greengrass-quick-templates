@@ -18,7 +18,14 @@ public class Main {
     TemplateCommand tc = new TemplateCommand();
     boolean didSomethingUseful = false;
     public static void main(String[] cmd) {
-        int ret = new Main(cmd).exec();
+        int ret = -1;
+        try {
+            ret = new Main(cmd).exec();
+        } catch(IllegalArgumentException ex) {
+            System.out.println(ex.getCause());
+        } catch(Throwable e) {
+            e.printStackTrace(System.out);
+        }
         if (ret != 0) showHelp();
         System.exit(ret & 0xFF);
     }
@@ -94,7 +101,7 @@ public class Main {
                             dest = Dest.REMOVE;
                             break;
                         case "--to":
-                        case "-to":
+                        case "-t":
                             dest = Dest.REGION;
                             tc.dryrun = true;
                             break;
@@ -226,8 +233,8 @@ public class Main {
             cmd.add(sb.toString());
             settings.keySet().forEach(componentName -> {
                 cmd.add("--merge");
-                cmd.add(componentName + "=" + DeployedComponent
-                        .of(componentName, tc).version);
+                cmd.add(componentName + "=" +
+                        DeployedComponent.of(componentName, tc).version);
             });
             if (tc.runCommand((l, e) -> {
                 if (!l.contains("INFO") && !l.contains(".awssdk."))

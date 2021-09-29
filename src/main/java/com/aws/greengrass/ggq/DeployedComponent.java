@@ -68,7 +68,10 @@ public class DeployedComponent {
         map(tc); // trigger maxWidth calc
         String fmt = "%-" + maxWidth // Yes, I am this anal
                 + "s %-10s %s\n";
-        forEach(tc, ds -> System.out.printf(fmt,
-                ds.name, ds.version, ds.state));
+        forEach(tc, ds -> {
+            System.out.printf(fmt, ds.name, ds.version, ds.state);
+            if(ds.configuration != null)
+                System.out.println("\t"+ds.configuration);
+        });
     }
 }

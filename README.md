@@ -1,5 +1,8 @@
 # ggq — GreenGrass Quick development tool
 
+### *Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.*
+#### *SPDX-License-Identifier: Apache-2.0*
+
 ## TL;DR
 <pre><b>ggq</b> [--dryrun | -dr] [-g <i>group</i>] [-gtd <i>tdir</i>] [--list | -l] [-pw] [-r <i>ggdir</i>] [-rm <i>comp</i>] [--upload | -u] [--verbose | -v] [--watch | -w] key=value... <i>files...</i></pre>
 
@@ -19,6 +22,7 @@ _files..._ | A list of files to be bundled into a component.  All of the files b
 _key=value..._ | Sets the value of a configuration variable.
 
 ### To install:
+From a shell on the device enter:
 ```
 curl https://raw.githubusercontent.com/aws-greengrass/aws-greengrass-quick-templates/main/install.sh  | sudo bash
 ```
